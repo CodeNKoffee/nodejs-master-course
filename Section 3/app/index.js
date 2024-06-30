@@ -13,8 +13,8 @@ var _data = require('./lib/data');
 
 // TESTING
 // @TODO delete this
-_data.read('test', 'newFile', function(err, data) {
-  console.log('This was the error: ', err, ' and this was the data: ', data);
+_data.update('test', 'newFile', {'fizz': 'buzz'}, function(err, data) {
+  console.log('This was the error: ', err);
 });
 
 // Istantiate the HTTP server
