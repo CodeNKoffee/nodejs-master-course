@@ -2,6 +2,8 @@
  * Library for storing and editing data
  */
 
+// CRUD Operations
+
 // Dependencies
 var fs = require('fs');
 var path = require('path');
