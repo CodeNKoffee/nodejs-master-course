@@ -152,8 +152,35 @@ handlers._users.put = function(data, callback) {
 };
 
 // Users - delete
+// Required field: phone
+// @TODO Only let an authenticated user delete their object. Don't let them delete anyone else's
+// @TODO Cleanup (delete) any other data files associated with this user
 handlers._users.delete = function(data, callback) {
+  // Check that the phone number is valid
+  var phone = typeof(data.queryStringObject.phone) == 'string' && data.queryStringObject.phone.trim().length >= 12 ? data.queryStringObject.phone.trim() : false;
 
+  if (phone) {
+    // Remove any '+' from the phone number
+    var sanitizedPhone = phone.replace('+', '');
+    // Lookup the user
+    _data.read('users', sanitizedPhone, function(err, data) {
+      if (!err && data) {
+        _data.delete('users', phone, function(err) {
+          if (!err) {
+            callback(200);
+          } else {
+            callback(500, {'Error': 'Could not delete the specified user'});
+          }
+        });
+        callback(200);
+      } else {
+        console.log("error: ", err);
+        callback(400, {'Error': 'Could not find the specified user'});
+      }
+    })
+  } else {
+    callback(400, {'Error': 'Missing required field'});
+  }
 };
 
 // Ping handler
