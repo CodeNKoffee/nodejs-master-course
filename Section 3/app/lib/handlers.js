@@ -34,17 +34,28 @@ handlers._users.get = function(data, callback) {
   if (phone) {
     // Remove any '+' from the phone number
     var sanitizedPhone = phone.replace('+', '');
-    // Lookup the user
-    _data.read('users', sanitizedPhone, function(err, data) {
-      if (!err && data) {
-        // Remove the hashed password from the user object before returning it to the requester
-        delete data.hashedPassword;
-        callback(200, data);
+
+    // Get the token from the headers
+    var token = typeof(data.headers.token) == 'string' ? data.headers.token : false;
+
+    // Verify that the given token is valid for the given phone number
+    handlers._tokens.verifyToken(token, phone, function(tokenIsValid) {
+      if (tokenIsValid) {
+        // Lookup the user
+        _data.read('users', sanitizedPhone, function(err, data) {
+          if (!err && data) {
+            // Remove the hashed password from the user object before returning it to the requester
+            delete data.hashedPassword;
+            callback(200, data);
+          } else {
+            console.log("error: ", err);
+            callback(404);
+          }
+        })
       } else {
-        console.log("error: ", err);
-        callback(404);
+        callback(403, {'Error': 'Missing required token in header, or token is invalid'});
       }
-    })
+    });
   } else {
     callback(400, {'Error': 'Missing required field'});
   }
@@ -327,6 +338,23 @@ handlers._tokens.delete = function(data, callback) {
     callback(400, {'Error': 'Missing required field'});
   }
 };
+
+// Verify if a given token id is currently valid for a given user
+handlers._tokens.verifyToken = function(id, phone, callback) {
+  // Lookup the token
+  _data.read('tokens', id, function(err, tokenData) {
+    if (!err && tokenData) {
+      // Check that the token is for the given user and has not expired
+      if (tokenData.phone == phone && tokenData.expires > Date.now()) {
+        callback(true);
+      } else {
+        callback(false);
+      }
+    } else {
+      callback(false);
+    }
+  });
+}
 
 // Ping handler
 handlers.ping = function(data, callback) {
