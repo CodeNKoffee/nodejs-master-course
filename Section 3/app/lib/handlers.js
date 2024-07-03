@@ -22,6 +22,33 @@ handlers.users = function(data, callback) {
 // Container for users submethods
 handlers._users = {};
 
+// Users - get
+// Required data: phone
+// Optional data: none
+// @TODO Only let an authenticated user access their object. Don't let them access anyone else's
+handlers._users.get = function(data, callback) {
+  // Check that the phone number phone is valid
+  var phone = typeof(data.queryStringObject.phone) == 'string' && data.queryStringObject.phone.trim().length >= 12 ? data.queryStringObject.phone.trim() : false;
+
+  if (phone) {
+    // Remove any '+' from the phone number
+    var sanitizedPhone = phone.replace('+', '');
+    // Lookup the user
+    _data.read('users', sanitizedPhone, function(err, data) {
+      if (!err && data) {
+        // Remove the hashed password from the user object before returning it to the requester
+        delete data.hashedPassword;
+        callback(200, data);
+      } else {
+        console.log("error: ", err);
+        callback(404);
+      }
+    })
+  } else {
+    callback(400, {'Error': 'Missing required field'});
+  }
+};
+
 // Users - post
 // Required data: firstName, lastName, phone, password, tosAgreement
 // Optional data: none
@@ -29,7 +56,7 @@ handlers._users.post = function(data, callback) {
   // Check that all required fields are filled out
   var firstName = typeof(data.payload.firstName) == 'string' && data.payload.firstName.trim().length > 0 ? data.payload.firstName.trim() : false;
   var lastName = typeof(data.payload.lastName) == 'string' && data.payload.lastName.trim().length > 0 ? data.payload.lastName.trim() : false;
-  var phone = typeof(data.payload.phone) == 'string' && data.payload.phone.trim().length == 13 ? data.payload.phone.trim() : false; // 10 digits
+  var phone = typeof(data.payload.phone) == 'string' && data.payload.phone.trim().length >= 12 ? data.payload.phone.trim() : false; // 10 digits
   var password = typeof(data.payload.password) == 'string' && data.payload.password.trim().length > 0 ? data.payload.password.trim() : false; 
   var tosAgreement = typeof(data.payload.tosAgreement) == 'boolean' && data.payload.tosAgreement == true ? true : false;
   
@@ -72,14 +99,56 @@ handlers._users.post = function(data, callback) {
   }
 };
 
-// Users - get
-handlers._users.get = function(data, callback) {
-  
-};
-
 // Users - put
+// Required data: phone
+// Optional data: firstName, lastName, password (at least one must be specified)
+// @TODO Only let an authenticated user update their own object. Don't let them update anyone else's  
 handlers._users.put = function(data, callback) {
+  // Check for the required field 
+  var phone = typeof(data.payload.phone) == 'string' && data.payload.phone.trim().length >= 12 ? data.payload.phone.trim() : false;
 
+  // Check for the optional fields
+  var firstName = typeof(data.payload.firstName) == 'string' && data.payload.firstName.trim().length > 0 ? data.payload.firstName.trim() : false;
+  var lastName = typeof(data.payload.lastName) == 'string' && data.payload.lastName.trim().length > 0 ? data.payload.lastName.trim() : false;
+  var password = typeof(data.payload.password) == 'string' && data.payload.password.trim().length > 0 ? data.payload.password.trim() : false;
+
+  // Error if the phone is invalid
+  if (phone) {
+    // Error if nothing is sent to update
+    if (firstName || lastName || password) {
+      // Lookup user
+      _data.read('users', phone, function(err, userData) {
+        if (!err) {
+          // Update the fields necessary
+          if (firstName) {
+            userData.firstName = firstName
+          } 
+          if (lastName) {
+            userData.lastName = lastName 
+          }
+          if (password) {
+            userData.hashedPassword = helpers.hash(password);
+          }
+
+          // Stor the new updates
+          _data.update('users', phone, userData, function(err) {
+            if (!err) {
+              callback(200);
+            } else {
+              console.log(err);
+              callback(500, {'Error': 'Could not update the user'});
+            }
+          });
+        } else {
+          callback(400, {'Error': 'the specified user does not exist!'});
+        }
+      });
+    } else {
+      callback(400, {'Error': 'Missing fields to update'});
+    }
+  } else {
+    callback(400, {'Error': 'Missing required field'});
+  }
 };
 
 // Users - delete
