@@ -175,7 +175,6 @@ handlers._users.put = function(data, callback) {
 
 // Users - delete
 // Required field: phone
-// @TODO Cleanup (delete) any other data files associated with this user
 handlers._users.delete = function(data, callback) {
   // Check that the phone number is valid
   var phone = typeof(data.queryStringObject.phone) == 'string' && data.queryStringObject.phone.trim().length >= 12 ? data.queryStringObject.phone.trim() : false;
