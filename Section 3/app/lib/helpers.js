@@ -36,7 +36,7 @@ helpers.createRandomString = function(strLength) {
 
   if (strLength) {
     // Define all possible characters that could go into a string
-    var possibleCharacters = 'qwertyuiopasdfghjklzxcvbnm1234567890';
+    var possibleCharacters = 'QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm1234567890';
 
     // Start the final string
     var str = '';
