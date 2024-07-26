@@ -398,7 +398,33 @@ handlers._checks.post = function(data, callback) {
   var url = typeof(data.payload.url) == 'string' && data.payload.url.trim().length > 0 ? data.payload.url.trim() : false; 
   var method = typeof(data.payload.method) == 'string' && ['post', 'get', 'put', 'delete'].indexOf(data.payload.method) > -1 ? data.payload.method : false; 
   var successCodes = typeof(data.payload.successCodes) == 'object' && data.payload.successCodes instanceof Array && data.payload.successCodes.length > 0 ? data.payload.successCodes : false; 
-  var timeoutSeconds = typeof(data.payload.timeoutSeconds) == 'number' && data.payload.timeoutSeconds % 1 === 0 && data.payload.timeoutSeconds >= 1 && data.payload.timeoutSeconds <= 5 ? data.payload.timeoutSeconds : false; 
+  var timeoutSeconds = typeof(data.payload.timeoutSeconds) == 'number' && data.payload.timeoutSeconds % 1 === 0 && data.payload.timeoutSeconds >= 1 && data.payload.timeoutSeconds <= 5 ? data.payload.timeoutSeconds : false;
+  
+  if (protocol && url && method && successCodes && timeoutSeconds) {
+    // Get the token from the headers
+    var token = typeof(data.headers.token) == 'string' ? data.headers.token : false;
+
+    // Lookup the user by reading the token
+    _data.read('tokens', token, function(err, tokenData) {
+      if (!err && tokenData) {
+        var phone = tokenData.phone;
+
+        // Lookup the user data
+        _data.read('users', userPhone, function(err, userData) {
+          if (!err && userData) {
+            
+          } else {
+            callback(403);
+          }
+        });
+      } else {
+        callback(403);
+      }
+    });
+
+  } else {
+    callback(400, {'Error': 'Missing required inputs, or inputs are invalid'});
+  }
 }
 
 // Ping handler
